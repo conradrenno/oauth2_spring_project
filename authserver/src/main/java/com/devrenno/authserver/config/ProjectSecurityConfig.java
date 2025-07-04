@@ -98,7 +98,7 @@ public class ProjectSecurityConfig {
                 .clientSecret("{noop}hello")
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
-                .scopes(scopeConfig -> scopeConfig.addAll(List.of(OidcScopes.OPENID, "USER")))
+                .scopes(scopeConfig -> scopeConfig.addAll(List.of(OidcScopes.OPENID, "USER", "ADMIN")))
                 .tokenSettings(TokenSettings.builder().accessTokenTimeToLive(Duration.ofMinutes(10))
                         .accessTokenFormat(OAuth2TokenFormat.SELF_CONTAINED).build()).build();
 

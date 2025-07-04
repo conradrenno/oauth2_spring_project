@@ -34,7 +34,7 @@ public class ProductController {
         return ResponseEntity.ok(productDTO);
     }
 
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN')")
+    //@PreAuthorize("hasAnyRole('ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<ProductDTO>  insert(@Valid @RequestBody ProductDTO productDTO) {
         productDTO = productService.insert(productDTO);
