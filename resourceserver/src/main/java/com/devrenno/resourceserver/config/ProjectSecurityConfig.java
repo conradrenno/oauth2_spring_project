@@ -7,6 +7,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
 import static org.springframework.security.config.Customizer.withDefaults;
@@ -19,10 +20,14 @@ public class ProjectSecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-       http.authorizeHttpRequests((requests) -> requests.anyRequest().authenticated());
-       http.csrf(csrf -> csrf.disable());
-       http.formLogin(withDefaults());
-       http.httpBasic(withDefaults());
+        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(new AuthTokenConverter());
+        http.authorizeHttpRequests((requests) -> requests.anyRequest().authenticated());
+        http.csrf(csrf -> csrf.disable());
+        http.oauth2ResourceServer(rsc -> rsc.jwt(jwtConfigurer ->
+                jwtConfigurer.jwtAuthenticationConverter(jwtAuthenticationConverter)));
+        http.formLogin(withDefaults());
+        http.httpBasic(withDefaults());
         return http.build();
     }
 

@@ -21,6 +21,7 @@ public class ProductController {
     @Autowired
     private ProductService productService;
 
+    @PreAuthorize("hasAnyRole('ROLE_USER')")
     @GetMapping
     public ResponseEntity<Page<ProductMinDTO>> findAll(
             @RequestParam(name = "name", defaultValue = "") String name, Pageable pageable) {
@@ -34,7 +35,7 @@ public class ProductController {
         return ResponseEntity.ok(productDTO);
     }
 
-    //@PreAuthorize("hasAnyRole('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN')")
     @PostMapping
     public ResponseEntity<ProductDTO>  insert(@Valid @RequestBody ProductDTO productDTO) {
         productDTO = productService.insert(productDTO);
