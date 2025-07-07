@@ -24,6 +24,7 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
+import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.OAuth2TokenFormat;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
@@ -106,7 +107,33 @@ public class ProjectSecurityConfig {
                 .tokenSettings(TokenSettings.builder().accessTokenTimeToLive(Duration.ofMinutes(10))
                         .accessTokenFormat(OAuth2TokenFormat.SELF_CONTAINED).build()).build();
 
-        return new InMemoryRegisteredClientRepository(clientCredClient);
+
+        RegisteredClient authCodeClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                .clientId("auth-code-client")
+                .clientSecret("{noop}hello2")
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                .redirectUri("https://oauth.pstmn.io/v1/callback")
+                .scope(OidcScopes.OPENID).scope(OidcScopes.EMAIL)
+                .tokenSettings(TokenSettings.builder().accessTokenTimeToLive(Duration.ofMinutes(10))
+                        .refreshTokenTimeToLive(Duration.ofHours(8)).reuseRefreshTokens(false)
+                        .accessTokenFormat(OAuth2TokenFormat.SELF_CONTAINED).build()).build();
+
+
+        RegisteredClient pkceClient = RegisteredClient.withId(UUID.randomUUID().toString())
+                .clientId("pkce-client")
+                .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+                .redirectUri("https://oauth.pstmn.io/v1/callback")
+                .scope(OidcScopes.OPENID).scope(OidcScopes.EMAIL)
+                .clientSettings(ClientSettings.builder().requireProofKey(true).build())
+                .tokenSettings(TokenSettings.builder().accessTokenTimeToLive(Duration.ofMinutes(10))
+                        .refreshTokenTimeToLive(Duration.ofHours(8)).reuseRefreshTokens(false)
+                        .accessTokenFormat(OAuth2TokenFormat.SELF_CONTAINED).build()).build();
+
+        return new InMemoryRegisteredClientRepository(clientCredClient, authCodeClient, pkceClient);
     }
 
     @Bean
