@@ -13,6 +13,9 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
@@ -38,9 +41,11 @@ import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -100,7 +105,7 @@ public class ProjectSecurityConfig {
     public RegisteredClientRepository registeredClientRepository() {
         RegisteredClient clientCredClient = RegisteredClient.withId(UUID.randomUUID().toString())
                 .clientId(clientId)
-                .clientSecret("{noop}hello")
+                .clientSecret("$2a$12$hX4W3985Pq5ccoC7QxWQg.tr3UuHQ6z11AGBN77BlK5u/lgG9zbAu") //hello
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
                 .scopes(scopeConfig -> scopeConfig.addAll(List.of(OidcScopes.OPENID, "USER", "ADMIN")))
@@ -109,8 +114,8 @@ public class ProjectSecurityConfig {
 
 
         RegisteredClient authCodeClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                .clientId("auth-code-client")
-                .clientSecret("{noop}hello2")
+                .clientId("authcodeclient")
+                .clientSecret("$2a$12$ebXL4D6K6eVaIAB5ykKNLOv534Kxorbx6bKd.4z1rqBcfPqglVVyS") //hello2
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
@@ -177,10 +182,22 @@ public class ProjectSecurityConfig {
         return context -> {
             if (context.getTokenType().equals(OAuth2TokenType.ACCESS_TOKEN)) {
                 context.getClaims().claims((claims)->{
+                    if (context.getAuthorizationGrantType().equals(AuthorizationGrantType.CLIENT_CREDENTIALS)){
                     Set<String> roles = context.getClaims().build().getClaim("scope");
                     claims.put("roles", roles);
+                    } else if (context.getAuthorizationGrantType().equals(AuthorizationGrantType.AUTHORIZATION_CODE)) {
+                        Set<String> roles = AuthorityUtils.authorityListToSet(context.getPrincipal().getAuthorities())
+                                .stream().map(c -> c.replaceFirst("ROLE_", ""))
+                                .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
+                        claims.put("roles", roles);
+                    }
                 });
             }
         };
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }
